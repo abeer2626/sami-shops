@@ -9,3 +9,5 @@ if parent_dir not in sys.path:
 # Import FastAPI app
 from main import app
 
+# Vercel needs the app variable directly
+# No need for Mangum since Vercel's Python runtime handles ASGI
