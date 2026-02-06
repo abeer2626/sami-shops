@@ -7,9 +7,10 @@ services:
   - type: web
     name: samishops-backend
     env: python
+    runtime: python-3.11.0
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt && prisma generate
+    buildCommand: pip install -r requirements.txt && prisma generate && prisma db push
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:
@@ -20,7 +21,7 @@ services:
       - key: FRONTEND_URL
         value: https://frontend-iota-rouge-95.vercel.app
       - key: SECRET_KEY
-        generate: true
+        generateValue: true
       - key: ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
