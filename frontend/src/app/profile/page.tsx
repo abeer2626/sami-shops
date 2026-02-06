@@ -178,7 +178,7 @@ export default function ProfilePage() {
                                         ))}
                                     </div>
                                 )}
-                            </section> section>
+                            </section>
                         )}
 
                         {activeTab === "profile" && (

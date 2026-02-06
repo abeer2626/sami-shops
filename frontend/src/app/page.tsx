@@ -41,17 +41,8 @@ const FLASH_DEALS = [
 ];
 
 // ============================================================================
-// Home Page Component with ISR caching
-// ============================================================================
-
-// Set revalidation time for ISR (5 minutes)
-export const revalidate = 300;
-
-// Note: Metadata is defined in root layout.tsx (Server Component)
-// Client components cannot export metadata in Next.js 15
-
-// ============================================================================
-// Client Component
+// Home Page Component
+// Note: This is a client component with caching handled via fetch options
 // ============================================================================
 
 function HomeContent() {
