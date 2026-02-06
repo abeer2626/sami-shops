@@ -1,0 +1,36 @@
+# ============================================================================
+# SamiShops Backend - Fly.io Deployment Configuration
+# ============================================================================
+
+app = "samishops-backend"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  ENVIRONMENT = "production"
+  PORT = "8000"
+  FRONTEND_URL = "https://frontend-iota-rouge-95.vercel.app"
+  ALGORITHM = "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES = "43200"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "10s"
+  grace_period = "60s"
+  method = "GET"
+  path = "/"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
