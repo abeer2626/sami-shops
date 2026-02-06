@@ -1,5 +1,5 @@
 # ============================================================================
-# SamiShops Backend - Render Deployment Blueprint
+# SamiShops - Render Deployment Blueprint (Full Stack)
 # ============================================================================
 
 services:
@@ -9,8 +9,8 @@ services:
     env: python
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt && prisma generate
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: cd backend && pip install -r requirements.txt && prisma generate
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /
     envVars:
       - key: PYTHON_VERSION
