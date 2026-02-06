@@ -91,26 +91,39 @@ async def log_requests(request: Request, call_next):
 
 # Database connection - use a singleton pattern
 db = Prisma()
+db_connected = False
+
+async def get_db_connection():
+    """Lazy database connection for serverless environments"""
+    global db_connected
+    if not db_connected:
+        try:
+            await db.connect()
+            db_connected = True
+        except Exception as e:
+            print(f"Database connection error: {e}")
+    return db
 
 @app.on_event("startup")
 async def startup():
-    await db.connect()
+    """Startup event - connect to database"""
+    if not IS_PRODUCTION:  # Only auto-connect in development
+        await get_db_connection()
 
 @app.on_event("shutdown")
 async def shutdown():
-    await db.disconnect()
+    """Shutdown event - disconnect from database"""
+    global db_connected
+    if db_connected:
+        await db.disconnect()
+        db_connected = False
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Ensure database is connected for async operations
 async def ensure_db_connected():
     """Ensure the database connection is alive."""
-    try:
-        # Try a simple query to check connection
-        await db.user.find_first()
-    except Exception:
-        # Connection is closed, reconnect
-        await db.connect()
+    await get_db_connection()
 
 async def get_db():
     """Dependency that ensures database is connected."""
