@@ -64,3 +64,5 @@ railway.context/
 
 # Render
 .render.yaml
+.vercel
+.env*.local

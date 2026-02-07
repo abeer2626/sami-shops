@@ -11,6 +11,17 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 43200))
 
+SUPER_ADMIN_EMAIL = "samijee24@gmail.com"
+DEFAULT_ADMIN_PASSWORD = "admin123"
+
+def is_super_admin(email: str) -> bool:
+    """Check if the given email belongs to the super admin."""
+    return email == SUPER_ADMIN_EMAIL
+
+def is_user_super_admin(user) -> bool:
+    """Check if a user object is the super admin."""
+    return user.email == SUPER_ADMIN_EMAIL if hasattr(user, 'email') else False
+
 def verify_password(plain_password, hashed_password):
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 

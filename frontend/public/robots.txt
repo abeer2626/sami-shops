@@ -1,0 +1,16 @@
+# SamiShops - Robots.txt
+# https://samishops.vercel.app
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /vendor/
+Disallow: /account/
+Disallow: /api/
+Disallow: /login
+Disallow: /register
+
+# Sitemap
+Sitemap: https://samishops.vercel.app/sitemap.xml

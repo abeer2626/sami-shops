@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import Watermark from "@/components/layout/Watermark";
+import AuthProvider from "@/components/providers/AuthProvider";
+import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 
-const inter = Inter({
+const outfit = Outfit({
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: '--font-outfit',
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://samishops.com";
+
 export const metadata: Metadata = {
-  title: "SamiShops - Your One-Stop Online Shopping Destination",
-  description: "Shop the latest products at SamiShops. Discover amazing deals on electronics, fashion, home goods, and more. Fast shipping across Pakistan.",
+  metadataBase: new URL(SITE_URL),
+  title: "Sami's Marketplace - Your Trusted Online Shopping Destination",
+  description: "Shop the latest products at Sami's Marketplace. Discover amazing deals on electronics, fashion, home goods, and more. Fast shipping across Pakistan.",
   keywords: ["online shopping", "Pakistan", "electronics", "fashion", "home goods", "e-commerce", "SamiShops", "buy online", "free delivery", "cash on delivery"],
   authors: [{ name: "SamiShops" }],
   creator: "SamiShops",
@@ -71,13 +79,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.className} antialiased bg-[#f4f4f4] min-h-screen flex flex-col`}
+        className={`${outfit.className} antialiased bg-[#f4f4f4] min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex-grow">
-          {children}
-        </main>
-        <Footer />
+        <ErrorBoundary>
+          <AuthProvider>
+            <Header />
+            <main className="flex-grow relative">
+              {children}
+              <Watermark theme="auto" intensity="subtle" />
+            </main>
+            <Footer />
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

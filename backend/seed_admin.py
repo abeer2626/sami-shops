@@ -6,9 +6,9 @@ async def main():
     db = Prisma()
     await db.connect()
     
-    email = "samijee24@gmail.com"
+    email = auth.SUPER_ADMIN_EMAIL
     password = "admin123"
-    name = "Admin Sami"
+    name = "Super Admin"
     role = "admin"
     
     hashed_password = auth.get_password_hash(password)

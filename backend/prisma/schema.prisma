@@ -19,17 +19,20 @@ model User {
   store            Store?
   sentMessages     Message[] @relation("SentMessages")
   receivedMessages Message[] @relation("ReceivedMessages")
+  reviews          Review[]
 }
 
 model Store {
-  id          String   @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   description String?
-  vendorId    String   @unique
-  vendor      User     @relation(fields: [vendorId], references: [id])
+  vendorId    String         @unique
+  vendor      User           @relation(fields: [vendorId], references: [id])
   products    Product[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  earnings    VendorEarning[]
+  payouts     VendorPayout[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 model Category {
@@ -42,30 +45,44 @@ model Category {
 }
 
 model Product {
-  id          String      @id @default(cuid())
-  name        String
-  description String
-  price       Float
-  stock       Int
-  images      String[]    // Array of image URLs
-  categoryId  String
-  category    Category    @relation(fields: [categoryId], references: [id])
-  storeId     String
-  store       Store       @relation(fields: [storeId], references: [id])
-  orderItems  OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String             @id @default(cuid())
+  name              String
+  description       String
+  price             Float
+  stock             Int
+  images            String[]           // Array of image URLs
+  categoryId        String
+  category          Category           @relation(fields: [categoryId], references: [id])
+  storeId           String
+  store             Store              @relation(fields: [storeId], references: [id])
+  orderItems        OrderItem[]
+  flashSaleProducts FlashSaleProduct[]
+  reviews           Review[]
+  averageRating     Float?             // Computed average rating
+  reviewCount       Int                @default(0) // Total number of reviews
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
-  items       OrderItem[]
-  totalAmount Float
-  status      String      @default("pending") // pending, processing, shipped, delivered, cancelled
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                String                @id @default(cuid())
+  userId            String
+  user              User                  @relation(fields: [userId], references: [id])
+  items             OrderItem[]
+  totalAmount       Float
+  status            String                @default("pending") // pending, paid, processing, shipped, delivered, cancelled
+  statusHistory     OrderStatusHistory[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  paymentStatus     String                @default("pending") // pending, paid, failed
+  paymentProvider   String?               // stripe, local, null
+  paymentReference  String?
+  estimatedDelivery DateTime?
+  trackingNumber    String?
+  shippingCarrier   String?
+  shippingAddress   String?
+  billingAddress    String?
+  notes             String?
 }
 
 model OrderItem {
@@ -78,6 +95,23 @@ model OrderItem {
   price     Float
 }
 
+// ============================================================
+// ORDER TRACKING SYSTEM
+// ============================================================
+
+model OrderStatusHistory {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status      String   // pending, paid, processing, shipped, delivered, cancelled
+  changedBy   String?  // User ID who changed the status
+  notes       String?  // Optional notes about the status change
+  createdAt   DateTime @default(now())
+
+  @@index([orderId])
+  @@index([createdAt])
+}
+
 model Message {
   id          String   @id @default(cuid())
   senderId    String
@@ -88,4 +122,123 @@ model Message {
   content     String
   isRead      Boolean  @default(false)
   createdAt   DateTime @default(now())
+}
+
+// ============================================================
+// FLASH SALE SYSTEM
+// ============================================================
+
+model FlashSale {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  isActive    Boolean  @default(true)
+  products    FlashSaleProduct[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([startTime, endTime])
+  @@index([isActive])
+}
+
+model FlashSaleProduct {
+  id              String    @id @default(cuid())
+  flashSaleId     String
+  flashSale       FlashSale @relation(fields: [flashSaleId], references: [id], onDelete: Cascade)
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  salePrice       Float
+  discountPercent Int
+  maxQuantity     Int?      // Optional: Max quantity per customer
+  soldCount       Int       @default(0)
+  createdAt       DateTime  @default(now())
+
+  @@unique([flashSaleId, productId])
+  @@index([flashSaleId])
+}
+
+// ============================================================
+// PRODUCT REVIEWS & RATINGS SYSTEM
+// ============================================================
+
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating      Int      // 1-5 stars
+  title       String?  // Optional review title
+  comment     String   // Review text
+  isVerified  Boolean  @default(false) // Verified purchase
+  helpful     Int      @default(0) // Number of helpful votes
+  images      String[] // Optional review images
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, productId]) // One review per user per product
+  @@index([productId])
+  @@index([rating])
+  @@index([createdAt])
+}
+
+// ============================================================
+// VENDOR COMMISSION SYSTEM
+// ============================================================
+
+model VendorEarning {
+  id                String   @id @default(cuid())
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  orderId           String   @unique
+  orderAmount       Float    // Total order amount
+  commissionRate    Float    // Commission rate (e.g., 0.10 for 10%)
+  commissionAmount  Float    // Commission deducted (orderAmount * commissionRate)
+  vendorAmount      Float    // Amount credited to vendor (orderAmount - commissionAmount)
+  status            String   @default("pending") // pending, available, paid
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model VendorPayout {
+  id                String   @id @default(cuid())
+  storeId           String
+  store             Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  amount            Float
+  status            String   @default("pending") // pending, processing, completed, rejected, failed
+  paymentMethod     String?  // bank_transfer, jazzcash, easypaisa, etc.
+  paymentDetails    String?  // JSON string with payment details
+  transactionId     String?  // External transaction ID
+  requestedBy       String   // User ID who requested the payout
+  processedBy       String?  // Admin User ID who processed the payout
+  notes             String?
+  rejectionReason   String?
+  requestedAt       DateTime @default(now())
+  processedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([storeId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+model Commission {
+  id                String   @id @default(cuid())
+  name              String   @unique
+  rate              Float    // Commission rate (e.g., 0.10 for 10%)
+  description       String?
+  isActive          Boolean  @default(true)
+  isDefault         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([isDefault])
 }
